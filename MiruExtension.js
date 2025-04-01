@@ -1,77 +1,58 @@
-import AbstractSource from './Example.js';
+// ==MiruExtension==
+// @name         1337x
+// @version      v0.0.1
+// @author       Damply
+// @lang         en
+// @license      MIT
+// @package      1337x
+// @type         bangumi
+// @icon         https://1337x.to/favicon.ico
+// @webSite      https://1337x.to
+// @nsfw         false
+// ==/MiruExtension==
 
-class MiruExtension extends AbstractSource {
-  name = 'Miru Extension';
-  description = 'A source for regular TV shows and movies via 1337x';
-  accuracy = 'High';
-  config = {};
+export default class extends Extension {
+  async search(kw) {
+    console.log('✅ MiruExtension: search() called with keyword:', kw);
+    const res = await this.request(`/search/${encodeURIComponent(kw)}/1/`);
+    const items = await this.querySelectorAll(res, ".table-list tbody tr");
+    const results = [];
 
-  constructor() {
-    super();
-    console.log('✅ MiruExtension: Loaded successfully');
-  }
+    for (const item of items) {
+      const html = await item.content;
+      const title = await this.querySelector(html, "a:nth-child(2)").text;
+      const url = await this.getAttributeText(html, "a:nth-child(2)", "href");
+      const seeders = parseInt(await this.querySelector(html, "td.coll-2").text);
+      const leechers = parseInt(await this.querySelector(html, "td.coll-3").text);
 
-  async single(options) {
-    console.log('✅ MiruExtension: single() called with options', options);
-    return await this.search1337x(options);
-  }
-
-  async batch(options) {
-    console.log('✅ MiruExtension: batch() called with options', options);
-    return await this.search1337x(options);
-  }
-
-  async movie(options) {
-    console.log('✅ MiruExtension: movie() called with options', options);
-    return await this.search1337x(options);
-  }
-
-  async search1337x(options) {
-    console.log('✅ MiruExtension: search1337x() called');
-    const { titles } = options;
-    const query = titles[0];
-    const url = `https://1337x.to/search/${encodeURIComponent(query)}/1/`;
-
-    console.log('✅ Fetching URL:', url);
-
-    try {
-      const response = await fetch(url);
-      const html = await response.text();
-      console.log('✅ HTML Received:', html.substring(0, 200)); // Print the first 200 characters of HTML
-      return this.parse1337xResults(html);
-    } catch (error) {
-      console.error('❌ Error fetching from 1337x:', error);
-      return [];
+      results.push({
+        title,
+        url,
+        seeders,
+        leechers,
+      });
     }
+    console.log('✅ MiruExtension: Search results:', results);
+    return results;
   }
 
-  parse1337xResults(html) {
-    console.log('✅ MiruExtension: parse1337xResults() called');
-    const torrents = [];
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(html, 'text/html');
-    const rows = doc.querySelectorAll('.table-list tbody tr');
-
-    rows.forEach(row => {
-      const title = row.querySelector('a:nth-child(2)').innerText;
-      const link = row.querySelector('a:nth-child(2)').href;
-      const seeders = parseInt(row.querySelector('td.coll-2').innerText);
-      const leechers = parseInt(row.querySelector('td.coll-3').innerText);
-      const size = row.querySelector('td.coll-4').innerText;
-      const date = new Date();
-      const hash = link.split('/').pop();
-
-      torrents.push({ title, link, seeders, leechers, downloads: 0, hash, size, verified: true, date });
+  async detail(url) {
+    console.log('✅ MiruExtension: detail() called with URL:', url);
+    const res = await this.request("", {
+      headers: { "Miru-Url": url }
     });
 
-    console.log('✅ Torrents found:', torrents);
-    return torrents;
+    const title = await this.querySelector(res, "title").text;
+    const magnetLink = await this.querySelector(res, 'a[href^="magnet:?xt="]').getAttributeText("href");
+
+    return {
+      title,
+      episodes: [
+        {
+          title: "Torrent",
+          urls: [{ name: "Magnet Link", url: magnetLink }]
+        }
+      ]
+    };
   }
 }
-
-// Make sure Miru can access the class globally
-if (typeof window !== 'undefined') {
-  window.MiruExtension = MiruExtension;
-}
-
-export default MiruExtension;

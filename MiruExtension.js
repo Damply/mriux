@@ -6,54 +6,65 @@ export default class MiruExtension extends AbstractSource {
   accuracy = 'High'
   config = {}
 
+  constructor() {
+    super();
+    console.log('✅ MiruExtension: Loaded successfully');
+  }
+
   async single(options) {
-    console.log('MiruExtension: single() called', options);
-    return await this.search1337x(options)
+    console.log('✅ MiruExtension: single() called with options', options);
+    return await this.search1337x(options);
   }
 
   async batch(options) {
-    console.log('MiruExtension: batch() called', options);
-    return await this.search1337x(options)
+    console.log('✅ MiruExtension: batch() called with options', options);
+    return await this.search1337x(options);
   }
 
   async movie(options) {
-    console.log('MiruExtension: movie() called', options);
-    return await this.search1337x(options)
+    console.log('✅ MiruExtension: movie() called with options', options);
+    return await this.search1337x(options);
   }
 
   async search1337x(options) {
-    console.log('MiruExtension: search1337x() called with options:', options);
-    const { titles } = options
-    const query = titles[0]
-    const url = `https://1337x.to/search/${encodeURIComponent(query)}/1/`
+    console.log('✅ MiruExtension: search1337x() called');
+    const { titles } = options;
+    const query = titles[0];
+    const url = `https://1337x.to/search/${encodeURIComponent(query)}/1/`;
 
-    console.log('Fetching URL:', url);
+    console.log('✅ Fetching URL:', url);
 
-    const response = await fetch(url)
-    const html = await response.text()
-    return this.parse1337xResults(html)
+    try {
+      const response = await fetch(url);
+      const html = await response.text();
+      console.log('✅ HTML Received:', html.substring(0, 200)); // Print the first 200 characters of HTML
+      return this.parse1337xResults(html);
+    } catch (error) {
+      console.error('❌ Error fetching from 1337x:', error);
+      return [];
+    }
   }
 
   parse1337xResults(html) {
-    console.log('MiruExtension: parse1337xResults() called');
-    const torrents = []
-    const parser = new DOMParser()
-    const doc = parser.parseFromString(html, 'text/html')
-    const rows = doc.querySelectorAll('.table-list tbody tr')
+    console.log('✅ MiruExtension: parse1337xResults() called');
+    const torrents = [];
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+    const rows = doc.querySelectorAll('.table-list tbody tr');
 
     rows.forEach(row => {
-      const title = row.querySelector('a:nth-child(2)').innerText
-      const link = row.querySelector('a:nth-child(2)').href
-      const seeders = parseInt(row.querySelector('td.coll-2').innerText)
-      const leechers = parseInt(row.querySelector('td.coll-3').innerText)
-      const size = row.querySelector('td.coll-4').innerText
-      const date = new Date()
-      const hash = link.split('/').pop()
+      const title = row.querySelector('a:nth-child(2)').innerText;
+      const link = row.querySelector('a:nth-child(2)').href;
+      const seeders = parseInt(row.querySelector('td.coll-2').innerText);
+      const leechers = parseInt(row.querySelector('td.coll-3').innerText);
+      const size = row.querySelector('td.coll-4').innerText;
+      const date = new Date();
+      const hash = link.split('/').pop();
 
-      torrents.push({ title, link, seeders, leechers, downloads: 0, hash, size, verified: true, date })
-    })
+      torrents.push({ title, link, seeders, leechers, downloads: 0, hash, size, verified: true, date });
+    });
 
-    console.log('Torrents found:', torrents);
-    return torrents
+    console.log('✅ Torrents found:', torrents);
+    return torrents;
   }
 }

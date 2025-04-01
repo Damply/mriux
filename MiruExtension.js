@@ -1,10 +1,10 @@
-import AbstractSource from './Example.js'
+import AbstractSource from './Example.js';
 
-export default class MiruExtension extends AbstractSource {
-  name = 'Miru Extension'
-  description = 'A source for regular TV shows and movies via 1337x'
-  accuracy = 'High'
-  config = {}
+class MiruExtension extends AbstractSource {
+  name = 'Miru Extension';
+  description = 'A source for regular TV shows and movies via 1337x';
+  accuracy = 'High';
+  config = {};
 
   constructor() {
     super();
@@ -68,3 +68,10 @@ export default class MiruExtension extends AbstractSource {
     return torrents;
   }
 }
+
+// Make sure Miru can access the class globally
+if (typeof window !== 'undefined') {
+  window.MiruExtension = MiruExtension;
+}
+
+export default MiruExtension;
